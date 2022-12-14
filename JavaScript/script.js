@@ -9,12 +9,17 @@ let janelaEdicaoBtnFechar = document.querySelector ('#janelaEdicaoBtnFechar')
 let btnAtualizarTarefa = document.querySelector ('#btnAtualizarTarefa')
 let idTarefaEdicao = document.querySelector ('#idTarefaEdicao')
 let inputTarefaNomeEdicao = document.querySelector ('#inputTarefaNomeEdicao')
+let dbTarefas = [];
 
+const KEY_CODE_ENTER = 13;
+const KEY_LOCAL_STORAGE = 'listaDeTarefa';
+obterTarefaLocalStorage();
+rendenizarListaTarefaHTML();
 
 
 InputNovaTarefa.addEventListener('keypress', (e) =>{
 
-    if(e.keyCode == 13){
+    if(e.keyCode == KEY_CODE_ENTER){
         let tarefa = {
             nome: InputNovaTarefa.value,
             id: gerarId(),
@@ -49,6 +54,11 @@ btnAtualizarTarefa.addEventListener('click', (e) =>{
     let tarefaAtual = document.getElementById('' + idTarefa + '');
 
     if(tarefaAtual){
+
+        const indiceTarefa = obterIndiceTarefaPorId(idTarefa); 
+        dbTarefas [indiceTarefa] = tarefa;
+        salvarTarefaLocalStorage();
+
         let li = criarTagLI(tarefa);
         listaTarefa.replaceChild(li, tarefaAtual);
         alternarJanelaEdicao();
@@ -61,10 +71,10 @@ function gerarId(){
 }
 
 function adicionarTarefa(tarefa){
-
-    let li = criarTagLI(tarefa);
-    listaTarefa.appendChild(li);
-    InputNovaTarefa.value = '';
+    dbTarefas.push(tarefa)
+    salvarTarefaLocalStorage();
+    rendenizarListaTarefaHTML();
+    
 }
 
 function criarTagLI(tarefa){
@@ -114,8 +124,15 @@ function editar(idTarefa){
 }
 
 function excluir(idTarefa){
+
     let confirmacao = window.confirm('Tem certeza que desejá excluir esse desejo?');
     if (confirmacao){
+
+        const indiceTarefa = obterIndiceTarefaPorId(idTarefa); 
+        dbTarefas.splice(indiceTarefa, 1);
+        salvarTarefaLocalStorage();
+
+
         let li = document.getElementById(''+ idTarefa + '');
         if(li){
             listaTarefa.removeChild(li);
@@ -128,4 +145,37 @@ function excluir(idTarefa){
 function alternarJanelaEdicao(){
     janelaEdicao.classList.toggle('abrir');
     janelaEdicaoFundo.classList.toggle('abrir');
+}
+
+function obterIndiceTarefaPorId(idTarefa){
+    const indiceTarefa = dbTarefas.findIndex(t => t.id == idTarefa);
+    if(indiceTarefa < 0){
+        throw new Error('Id do desejo não encontrado:', idTarefa)
+    }
+    return indiceTarefa;
+
+
+
+}
+function rendenizarListaTarefaHTML(){
+    listaTarefa.innerHTML = '';
+    for (let i=0; i < dbTarefas.length; i++){
+
+        let li = criarTagLI(dbTarefas[i]);
+        listaTarefa.appendChild(li);
+    }
+
+    
+    InputNovaTarefa.value = '';
+
+}
+
+function salvarTarefaLocalStorage(){
+    localStorage.setItem(KEY_LOCAL_STORAGE, JSON.stringify(dbTarefas))
+}
+
+function obterTarefaLocalStorage(){
+    if(localStorage.getItem(KEY_LOCAL_STORAGE)){
+        dbTarefas = JSON.parse(localStorage.getItem(KEY_LOCAL_STORAGE));
+    }
 }
